@@ -1,0 +1,129 @@
+require("dotenv").config();
+
+const Fastify = require("fastify");
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
+const Groq = require("groq-sdk");
+const cors = require("@fastify/cors");
+
+const fastify = Fastify({ logger: true });
+
+fastify.register(cors, {
+  origin: "http://localhost:5173"
+});
+
+const dbPath = path.join(__dirname, "db", "movies.db");
+const db = new sqlite3.Database(dbPath);
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+});
+
+
+fastify.get("/", (request, reply) => {
+  reply.send({ message: "Backend is running" });
+});
+
+
+fastify.post("/test", (request, reply) => {
+  reply.send({
+    message: "POST working",
+    receivedData: request.body
+  });
+});
+
+
+fastify.get("/history", (request, reply) => {
+  db.all(
+    "SELECT * FROM recommendations ORDER BY timestamp DESC",
+    [],
+    (err, rows) => {
+      if (err) {
+        return reply.code(500).send({ error: "Database error" });
+      }
+
+      const data = rows.map(item => ({
+        id: item.id,
+        user_input: item.user_input,
+        recommended_movies: JSON.parse(item.recommended_movies),
+        timestamp: item.timestamp
+      }));
+
+      reply.send(data);
+    }
+  );
+});
+
+
+fastify.post("/recommend", async (request, reply) => {
+  const userInput = request.body.user_input;
+
+  if (!userInput) {
+    return reply.code(400).send({ error: "user_input is required" });
+  }
+
+  try {
+    // 1️⃣ Call Groq AI
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        {
+          role: "user",
+          content: `Recommend 3 to 5 movies based on this preference: ${userInput}.
+          Return only movie names separated by commas.`
+        }
+      ]
+    });
+
+    const aiText = completion.choices[0].message.content;
+
+    let recommendations = aiText
+      .split(",")
+      .map(m => m.trim())
+      .filter(Boolean);
+
+    if (recommendations.length === 0) {
+      recommendations = [
+        "Inception",
+        "Mad Max: Fury Road",
+        "Wonder Woman"
+      ];
+    }
+
+    // 2️⃣ Save to DB using Promise
+    const insertId = await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO recommendations (user_input, recommended_movies)
+         VALUES (?, ?)`,
+        [userInput, JSON.stringify(recommendations)],
+        function (err) {
+          if (err) reject(err);
+          else resolve(this.lastID);
+        }
+      );
+    });
+
+    // 3️⃣ Send response ONCE
+    return reply.send({
+      id: insertId,
+      user_input: userInput,
+      recommended_movies: recommendations
+    });
+
+  } catch (error) {
+    console.error("GROQ ERROR:", error.message);
+    return reply.code(500).send({
+      error: "AI service failed",
+      reason: error.message
+    });
+  }
+});
+
+
+fastify.listen({ port: 3000 }, (err) => {
+  if (err) {
+    console.error(err);
+    process.exit(1);
+  }
+  console.log("Server running on port 3000");
+});
