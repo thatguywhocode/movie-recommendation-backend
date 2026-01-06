@@ -9,8 +9,13 @@ const cors = require("@fastify/cors");
 const fastify = Fastify({ logger: true });
 
 fastify.register(cors, {
-  origin: "http://localhost:5173"
+  origin: [
+    "http://localhost:5173",
+    "https://movie-recommendation-frontend-gzpofqrs3.vercel.app"
+  ],
+  methods: ["GET", "POST"]
 });
+
 
 const dbPath = path.join(__dirname, "db", "movies.db");
 const db = new sqlite3.Database(dbPath);
