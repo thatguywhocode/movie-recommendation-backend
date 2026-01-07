@@ -1,70 +1,37 @@
-# 🎬 Movie Recommendation Web App (AI Powered)
+# Movie Recommendation App
 
-This is a **full-stack AI-based movie recommendation application** that suggests movies based on user preferences.  
-The frontend is built using **React (Vite)** and the backend uses **Node.js, Fastify, SQLite, and Groq AI API**.
+A simple movie recommendation app with separate `backend` and `frontend` folders.
 
----
+**Prerequisites**
+- Node.js (v16+ recommended) and `npm` or `pnpm`
 
-## 🚀 Features
+**Quick Start (Windows PowerShell)**
 
-- AI-powered movie recommendations (3–5 movies)
-- Clean and interactive UI
-- Backend API with database storage
-- Stores user inputs and recommendations
-- Fully deployed (Frontend + Backend)
+Backend
 
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-- React (Vite)
-- JavaScript
-- CSS
-
-### Backend
-- Node.js
-- Fastify
-- SQLite
-- Groq AI API
-
-### Deployment
-- Frontend: **Vercel**
-- Backend: **Render**
-
----
-
-## 🌐 Deployed Links
-
-- **Frontend (Live App):**  
-  https://movie-recommendation-frontend-gzpofqrs3.vercel.app
-
-- **Backend API:**  
-  https://movie-recommendation-backend-uuj3.onrender.com
-
----
-
-## 📂 Project Structure
-
-movie-recommendation-app/
-│
-├── frontend/ # React (Vite) frontend
-└── backend/ # Node.js + Fastify backend
-
-Backend Setup (Local)
-Step 1: Navigate to backend folder
+```powershell
 cd backend
-
-Step 2: Install dependencies
 npm install
-
-Step 3: Create .env file
-GROQ_API_KEY=your_groq_api_key_here
-
-Step 4: Start backend server
+# initialize the SQLite DB (if needed)
+node db/initDb.js
+# start the backend server
 node server.js
+```
 
+Frontend
 
-Backend will run at:
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-http://localhost:3000
+Open the frontend URL shown by Vite (usually http://localhost:5173) in your browser.
+
+**Notes**
+- The backend has dependencies listed in `backend/package.json`; there is no `start` script, so `node server.js` is used to run the server.
+- The frontend uses Vite; use `npm run build` to build for production and `npm run preview` to preview the production build.
+- If the backend relies on environment variables, add a `.env` file in `backend/` before starting.
+
+If you want, I can add an `npm start` script to the backend `package.json` and a simple dev script for running both services concurrently.
+
